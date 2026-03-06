@@ -1,0 +1,17 @@
+numpy
+tqdm
+requests
+pillow
+opencv-python
+decord
+sentence-transformers
+torch
+
+# Optional (only needed for plotting utilities)
+matplotlib
+
+# Optional (needed by YOLO-World adapter in TStar/interface_yolo.py)
+mmengine
+mmdet
+supervision
+
