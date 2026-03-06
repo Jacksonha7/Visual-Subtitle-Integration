@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CVPR 2026](https://img.shields.io/badge/CVPR-2026-orange.svg)](https://cvpr.thecvf.com/)
 
-Official implementation of the paper **VSI: Visual–Subtitle Integration for Keyframe Selection to Enhance Long Video Understanding** (CVPR 2026 Submission #9004). A multimodal keyframe retrieval framework that fuses visual and subtitle information for long video understanding, achieving SOTA performance on LongVideoBench and VideoMME datasets.
+Official implementation of the paper **VSI: Visual–Subtitle Integration for Keyframe Selection to Enhance Long Video Understanding** (CVPR 2026 findings). A multimodal keyframe retrieval framework that fuses visual and subtitle information for long video understanding, achieving SOTA performance on LongVideoBench and VideoMME datasets.
 
 ## 1. Project Introduction
 ### 1.1 Core Motivation
