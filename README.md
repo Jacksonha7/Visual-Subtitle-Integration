@@ -216,11 +216,14 @@ python experiments/ablation_text_weight.py --data_root ./data/processed/LongVide
 ## 10. Citation
 If you find our work useful in your research, please cite our paper:
 ```bibtex
-@inproceedings{VSI2026,
-  title={VSI: Visual--Subtitle Integration for Keyframe Selection to Enhance Long Video Understanding},
-  author={<Your Author Names>},
-  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year={2026}
+@misc{he2025vsivisualsubtitleintegration,
+      title={VSI: Visual Subtitle Integration for Keyframe Selection to enhance Long Video Understanding}, 
+      author={Jianxiang He and Meisheng Hong and Jungang Li and Ziyang Chen and Weiyu Guo and Xuming Hu and Hui Xiong},
+      year={2025},
+      eprint={2508.06869},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2508.06869}, 
 }
 ```
 
@@ -234,6 +237,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 13. Contact
 If you have any questions, issues or suggestions, please contact:
-- Author Email: <your_email@xxx.com>
+- Author Email: jhe307@connect.hkust-gz.edu.cn
+
 - GitHub Issues: [https://github.com/<your_repo>/VSI/issues](https://github.com/<your_repo>/VSI/issues)
 
