@@ -1,4 +1,4 @@
-# VSI: Visual–Subtitle Integration for Keyframe Selection
+# （CVPR 2026 findings）VSI: Visual–Subtitle Integration for Keyframe Selection
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![PyTorch Version](https://img.shields.io/badge/PyTorch-2.0%2B-red.svg)](https://pytorch.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
