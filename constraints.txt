@@ -1,0 +1,31 @@
+# pip constraints file — see scripts/setup_env.sh and the "Verified Environment"
+# section of README.md for why every one of these pins exists. Apply it to every
+# pip install in this environment via:
+#   export PIP_CONSTRAINT=$(pwd)/constraints.txt
+#
+# A constraint does not force-install a package; it only pins the version IF
+# something else causes it to be installed. This stops transitive dependencies
+# (e.g. openmim, sentence-transformers, supervision) from silently upgrading
+# torch/numpy/opencv-python/mmcv to a version that breaks the rest of the stack.
+
+# mmdet==3.0.0 requires mmcv<2.1.0 at runtime, and openmmlab only publishes a
+# prebuilt mmcv<2.1.0 wheel for the torch2.0.x/cu118 combo (not torch2.1/cu121).
+torch==2.0.1
+torchvision==0.15.2
+mmcv==2.0.1
+
+# newer numpy/opencv-python break the torch2.0.1 ABI and pull in
+# opencv-python-headless (which conflicts with opencv-python — see README).
+numpy==1.26.4
+opencv-python==4.9.0.80
+
+# setuptools>=81 dropped the bundled pkg_resources that torch's
+# cpp_extension.py (imported while building mmyolo) still needs.
+setuptools<81
+
+# YOLO-World's own basic_requirements.txt pin; newer transformers pulls a
+# newer torch floor and re-triggers the whole chain above.
+transformers==4.36.2
+
+# newer sentence-transformers also pulls a newer torch floor.
+sentence-transformers==2.7.0

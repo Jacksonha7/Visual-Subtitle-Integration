@@ -1,17 +1,32 @@
-numpy
+# Core dependencies, pinned to a verified-working combo.
+# See constraints.txt and the "Verified Environment / Known Issues" section of
+# README.md for why these specific versions — most of this stack has real,
+# non-obvious version conflicts once YOLO-World/mmdet/mmcv enter the picture.
+numpy==1.26.4
 tqdm
 requests
 pillow
-opencv-python
+opencv-python==4.9.0.80
 decord
-sentence-transformers
-torch
+imageio
+sentence-transformers==2.7.0
+torch==2.0.1
+torchvision==0.15.2
 
 # Optional (only needed for plotting utilities)
 matplotlib
 
-# Optional (needed by YOLO-World adapter in TStar/interface_yolo.py)
-mmengine
-mmdet
-supervision
-
+# Optional (needed by YOLO-World adapter in TStar/interface_yolo.py).
+# Do NOT `pip install` these three directly — mmdet==3.0.0 requires
+# mmcv<2.1.0, and YOLO-World's own pyproject.toml requires torchvision
+# >=0.16.2, which conflicts with the torch2.0.1-compatible mmcv build above.
+# Run `bash scripts/setup_env.sh` instead, which installs YOLO-World, mmcv,
+# mmdet, mmengine, mmyolo and supervision in an order/mode that avoids both
+# conflicts. This file lists them for reference only:
+#   mmengine==0.10.7
+#   mmdet==3.0.0
+#   mmcv==2.0.1
+#   mmyolo==0.6.0
+#   supervision==0.19.0
+#   prettytable
+#   lvis

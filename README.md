@@ -22,17 +22,32 @@ Existing keyframe selection algorithms rely solely on visual modality, leading t
 - Multimodal long video understanding
 
 ## 2. Environment Configuration
-### 2.1 Basic Dependencies
-Our code is tested on Ubuntu 20.04/22.04 with the following core dependencies:
+### 2.1 Basic Dependencies (recommended: one-shot script)
+Getting the YOLO-World detector adapter working involves a chain of real
+version conflicts between YOLO-World's own `pyproject.toml`, mmdet's runtime
+version check, and openmmlab's prebuilt wheel index (details in
+[2.4](#24-️-verified-environment--known-issues)). Rather than rediscovering
+these, run:
 ```bash
-# Create conda environment
+bash scripts/setup_env.sh
+```
+This creates a `vsi` conda env (Python 3.10), installs a verified-working
+pinned combo (`constraints.txt`), clones/patches YOLO-World into
+`third_party/YOLO-World`, and downloads the small LVIS metadata file that
+`init_detector()` needs even for pure custom-vocabulary inference. It is
+idempotent — safe to re-run if it fails partway through.
+
+Override `CONDA_ENV_NAME`, `YOLO_WORLD_DIR`, or `PYTHON_VERSION` as
+environment variables if you need different values.
+
+### 2.1.1 Manual install (if you don't need the YOLO-World branch)
+If you only need the subtitle-similarity branch (`--subtitle_root`, no
+`--detector yoloworld`), a plain install is enough and none of the version
+conflicts in 2.4 apply:
+```bash
 conda create -n vsi python=3.10
 conda activate vsi
-
-# Install PyTorch (match your CUDA version)
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-
-# Install other core dependencies
 pip install -r requirements.txt
 ```
 
@@ -46,6 +61,100 @@ VSI relies on the following pre-trained models (automatically downloaded or manu
 - GPU: NVIDIA A100/V100/3090/4090 (≥16G VRAM, recommended ≥24G for long video processing)
 - CPU: ≥8 cores, ≥16G RAM
 - Disk: ≥100G free space (for dataset and pre-trained weights)
+
+### 2.4 ⚠️ Verified Environment / Known Issues
+The exact combo below was verified end-to-end (env setup → checkpoint load →
+keyframe search on a real video) on Ubuntu with CUDA 11.8. `scripts/setup_env.sh`
+installs precisely this. If you hit an error not listed here, please open an
+issue with the full traceback.
+
+| Package | Version | Why it's pinned |
+|---|---|---|
+| `torch` / `torchvision` | `2.0.1` / `0.15.2` (cu118) | See mmcv row below |
+| `mmcv` | `2.0.1` | `mmdet==3.0.0` asserts `mmcv<2.1.0` at import time, but openmmlab only publishes a prebuilt `mmcv<2.1.0` wheel for the `torch2.0.x`/`cu118` combo — not `torch2.1`/`cu121`. Using a newer torch here silently gets you an incompatible mmcv and a cryptic `AssertionError` on the very first import. |
+| `mmdet` | `3.0.0` | Pinned by YOLO-World; see above. |
+| `transformers` | `4.36.2` | Newer versions raise torch's minimum required version and re-trigger the conflict above. |
+| `sentence-transformers` | `2.7.0` | Same reason. |
+| `opencv-python` | `4.9.0.80` | See "opencv-python vs. opencv-python-headless" below. |
+| `numpy` | `<2` (e.g. `1.26.4`) | torch 2.0.1 wheels are built against numpy 1.x; numpy 2.x imports but raises "Failed to initialize NumPy: _ARRAY_API not found" warnings and can misbehave. |
+| `setuptools` | `<81` | See "pkg_resources" below. |
+| `supervision` | `0.19.0` | Pinned by YOLO-World; older than what `TStar/interface_yolo.py` was originally written against (see "LabelAnnotator" below). |
+
+Known issues, in the order you'll likely hit them from a naive install:
+
+1. **`pkg_resources` missing while building `mmyolo`.** setuptools ≥81 no
+   longer bundles `pkg_resources`, but torch's `cpp_extension.py` (imported
+   while building mmyolo from source) still needs it, and pip's build
+   isolation means the outer environment's torch install isn't visible to
+   the isolated build. Fix: pin `setuptools<81`, and install YOLO-World/mmyolo
+   with `pip install --no-build-isolation ...`.
+2. **`mmdet==3.0.0` requires `mmcv<2.1.0`, but that wheel doesn't exist for
+   torch2.1/cu121.** This is the root conflict described in the table above —
+   it forces the whole stack down to torch2.0.1/cu118.
+3. **YOLO-World's own `pyproject.toml` requires `torchvision>=0.16.2`**,
+   which directly conflicts with the torch2.0.1-compatible combo above (this
+   is an inconsistency in the upstream repo, not something we can pin
+   around). Fix: install YOLO-World and its `third_party/mmyolo` submodule
+   with `pip install --no-build-isolation --no-deps -e .`, then install the
+   small remaining deps (`mmdet`, `supervision`, `prettytable`) explicitly.
+   `--no-deps` also means `mmdet` isn't pulled in automatically — install it
+   as its own step.
+4. **`opencv-python` vs. `opencv-python-headless`.** `openmim`/`supervision`
+   pull in `opencv-python-headless` as a transitive dependency. It and
+   `opencv-python` both install into the same `cv2/` package directory and
+   silently corrupt each other — `import cv2; cv2.__version__` ends up
+   reporting whichever was installed last, and you get sporadic, hard-to-explain
+   native crashes. Fix: never let both be installed; if you see both in
+   `pip list`, `pip uninstall -y opencv-python-headless opencv-python` and
+   reinstall only `opencv-python==4.9.0.80`.
+5. **Upstream syntax bug in AILab-CVC/YOLO-World.**
+   `yolo_world/models/detectors/yolo_world.py`'s `reparameterize()` has
+   `self.text_feats, None = self.backbone.forward_text(texts)` — assigning to
+   the literal `None` is a `SyntaxError` in Python and breaks importing
+   `yolo_world` entirely. `scripts/setup_env.sh` patches this automatically
+   (`None` → `_`); if you install YOLO-World some other way, apply the same
+   one-line fix.
+6. **Import order: `torch` must be imported before `cv2`/`decord`.** If
+   `cv2`/`decord` get imported first and `torch`+CUDA is only touched later
+   in the same process, you get a native crash on GPU nodes:
+   `terminate called after throwing an instance of 'std::system_error' what():
+   random_device could not be read`. This is an OpenMP/MKL runtime clash
+   between the `opencv-python`/`decord` wheels and torch's bundled CUDA
+   runtime, and only reproduces where a GPU is actually visible (a CPU-only
+   sanity check will not catch it). `TStar/__init__.py` now imports `torch`
+   first for this reason — if you add new modules to this package, keep that
+   import first.
+7. **`LabelAnnotator(..., smart_position=True)` fails on `supervision==0.19.0`.**
+   `smart_position` was added in a later `supervision` release; the pinned
+   0.19.0 (required by YOLO-World) doesn't have it. Already removed from
+   `TStar/interface_yolo.py`; the visualization still works, just without
+   smart label placement.
+8. **`init_detector()` needs real LVIS files, even for custom-vocabulary
+   inference.** The bundled YOLO-World `configs/pretrain/*lvis_minival*.py`
+   configs point their `test_dataloader` at a real LVIS-minival annotation
+   file and a small class-name JSON, and `mmdet`'s `init_detector()` builds
+   that dataset just to read off `.metainfo` — even though VSI overrides the
+   text prompts at runtime via `reparameterize_object_list()`. Both paths are
+   resolved **relative to the working directory you run the script from**,
+   not the config file's location. `scripts/setup_env.sh` downloads the
+   ~35MB annotation JSON and symlinks YOLO-World's bundled class-text
+   directory into `./data/` for you; if you hit
+   `FileNotFoundError: data/coco/lvis/...` or
+   `data/texts/lvis_v1_class_texts.json`, re-run it or recreate those two
+   paths by hand.
+9. **`ModuleNotFoundError: No module named 'TStar'` when running the example
+   scripts directly.** `python examples/run_keyframe_search.py` puts
+   `examples/` (not the repo root) on `sys.path`. Run from the repo root with
+   the repo root on `PYTHONPATH`:
+   ```bash
+   export PYTHONPATH="$(pwd):$PYTHONPATH"
+   ```
+10. **The YOLO-World README's own model-card table links the wrong
+    checkpoint file for the S-size model** (it points "YOLO-World-S" at an
+    `x_stage1-*.pth` file). Get the actual filename from the
+    [`wondervictor/YOLO-World-V2.1`](https://huggingface.co/wondervictor/YOLO-World-V2.1)
+    HuggingFace repo's file listing instead of trusting the table — the real
+    S-size stage-1 checkpoint is `s_stage1-d1c1d7d8.pth`.
 
 ## 3. Data Preparation
 ### 3.1 Supported Datasets
@@ -71,16 +180,30 @@ We evaluate VSI on two mainstream long video understanding benchmarks:
 ```
 
 ## 4. Quick Start
+Run every command below from the repo root, with the repo root on
+`PYTHONPATH` (needed because `TStar` is imported by absolute package name —
+see [2.4, item 9](#24-️-verified-environment--known-issues)):
+```bash
+conda activate vsi
+export PYTHONPATH="$(pwd):$PYTHONPATH"
+```
+
 ### 4.1 Keyframe Retrieval (Single Video — Visual-Only)
-For a quick test on a single video without subtitles, use the example script:
+For a quick test on a single video without subtitles, use the example script.
+`--yoloworld_config`/`--yoloworld_ckpt` should point at one of the configs
+under `third_party/YOLO-World/configs/pretrain/` (created by
+`scripts/setup_env.sh`) and a matching checkpoint downloaded from
+[`wondervictor/YOLO-World-V2.1`](https://huggingface.co/wondervictor/YOLO-World-V2.1)
+(double-check the filename against that repo's own file listing — see
+[2.4, item 10](#24-️-verified-environment--known-issues)):
 ```bash
 python examples/run_keyframe_search.py \
   --video_path ./data/videos/xxx.mp4 \
   --target_objects "person,cup" \
   --cue_objects "table" \
   --detector yoloworld \
-  --yoloworld_config /path/to/yolo_world.py \
-  --yoloworld_ckpt /path/to/yolo_world.pth \
+  --yoloworld_config third_party/YOLO-World/configs/pretrain/yolo_world_v2_s_vlpan_bn_2e-3_100e_4x8gpus_obj365v1_goldg_train_lvis_minival.py \
+  --yoloworld_ckpt /path/to/s_stage1-d1c1d7d8.pth \
   --search_nframes 8 \
   --device cuda:0 \
   --output_dir ./output/
@@ -185,7 +308,11 @@ VSI/
 │   └── src/evaluation/      # metrics.py — valid-search-ratio and temporal-coverage
 ├── examples/
 │   └── run_keyframe_search.py  # Single-video quick start (visual-only)
-├── requirements.txt         # Dependencies list
+├── scripts/
+│   └── setup_env.sh         # One-shot conda env + YOLO-World setup (see 2.4)
+├── third_party/YOLO-World/  # Cloned by scripts/setup_env.sh, not committed
+├── requirements.txt         # Dependencies list (VSI's own; see 2.4 for YOLO-World's)
+├── constraints.txt          # pip constraints pinning the verified-working combo
 ├── LICENSE                  # License file
 └── README.md                # Project documentation
 ```

@@ -17,6 +17,12 @@ results/
 runs/
 work_dirs/
 
+# created by scripts/setup_env.sh
+third_party/
+data/
+*.log
+.nfs*
+
 *.npy
 *.npz
 *.pt

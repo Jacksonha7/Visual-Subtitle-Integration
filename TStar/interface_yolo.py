@@ -55,7 +55,6 @@ class YoloInterface:
         self.LABEL_ANNOTATOR = LabelAnnotator(text_padding=4,
                                         text_scale=0.5,
                                         text_thickness=1,
-                                        smart_position=True,
                                         color=ColorPalette.LEGACY)
 
 class YoloWorldInterface(YoloInterface):

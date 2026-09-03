@@ -8,16 +8,16 @@ Official implementation of **VSI: Visual–Subtitle Integration for Keyframe Sel
 
 ## Environment Setup
 
-```bash
-conda create -n vsi python=3.10 && conda activate vsi
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-pip install -r requirements.txt
-```
+Run `bash scripts/setup_env.sh` — this handles the full stack (torch,
+opencv-python, mmcv, mmdet, mmengine, mmyolo, YOLO-World, and VSI's own
+`requirements.txt`) in an order that avoids a real version-conflict chain
+(mmdet==3.0.0 requires mmcv<2.1.0, which only has prebuilt wheels for
+torch2.0.1/cu118; YOLO-World's own pyproject.toml separately requires
+torchvision>=0.16.2, which conflicts with that). See the "Verified
+Environment / Known Issues" section of README.md for the full explanation
+if you need to adapt this to a different CUDA/torch version.
 
-Core optional dependencies (only needed for YOLO-World):
-```bash
-pip install mmengine mmdet supervision
-```
+Do **not** naively `pip install mmengine mmdet supervision` — see above.
 
 ## Entry Points
 
