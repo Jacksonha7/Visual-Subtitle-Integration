@@ -424,7 +424,8 @@ class MultimodalTStarFramework:
         target_objects = grounding_objects['target_objects']
         cue_objects = grounding_objects['cue_objects']
         relations = grounding_objects.get('relations', [])
-        
+        self.results['Searching_Objects'] = grounding_objects
+
         # 初始化视频搜索器
         video_searcher = self._initialize_searcher(target_objects, cue_objects, relations)
         
@@ -453,7 +454,6 @@ class MultimodalTStarFramework:
             video_path=self.config.video_path,
             target_objects=target_objects,
             cue_objects=cue_objects,
-            relations=relations,
             search_nframes=self.config.search_nframes,
             image_grid_shape=(self.config.grid_rows, self.config.grid_cols),
             output_dir=self.config.output_dir,

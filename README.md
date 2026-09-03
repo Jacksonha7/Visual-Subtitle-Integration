@@ -155,6 +155,19 @@ Known issues, in the order you'll likely hit them from a naive install:
     [`wondervictor/YOLO-World-V2.1`](https://huggingface.co/wondervictor/YOLO-World-V2.1)
     HuggingFace repo's file listing instead of trusting the table — the real
     S-size stage-1 checkpoint is `s_stage1-d1c1d7d8.pth`.
+11. **`TStarSearcher.__init__() got an unexpected keyword argument
+    'relations'`** when running `VSI_keyframe_search.py` (the subtitle-fusion
+    path). `TStarSearcher` had its `relations` parameter removed, but
+    `MultimodalTStarFramework._initialize_searcher` still passed it through.
+    Fixed — already removed from the call site.
+12. **`logging.info(...)` calls in the example/main scripts don't print
+    anything.** `mmengine`/`mmdet` configure the root logger's handlers as a
+    side effect of import, so the `logging.basicConfig(...)` call in
+    `main()` (which is a no-op if the root logger already has handlers) never
+    takes effect. The actual search results are still written correctly to
+    the output JSON/`.npy` files — only the progress/summary log lines are
+    silently dropped. If you need those messages, configure your own logger
+    explicitly rather than relying on `logging.basicConfig`.
 
 ## 3. Data Preparation
 ### 3.1 Supported Datasets
