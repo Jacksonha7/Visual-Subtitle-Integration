@@ -3,8 +3,12 @@
 [![PyTorch Version](https://img.shields.io/badge/PyTorch-2.0%2B-red.svg)](https://pytorch.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CVPR 2026](https://img.shields.io/badge/CVPR-2026-orange.svg)](https://cvpr.thecvf.com/)
+[![Project Page](https://img.shields.io/badge/Project-Page-blue.svg)](https://jacksonha7.github.io/VSI-page/)
+[![arXiv](https://img.shields.io/badge/arXiv-2508.06869-b31b1b.svg)](https://arxiv.org/abs/2508.06869)
 
 Official implementation of the paper **VSI: Visual–Subtitle Integration for Keyframe Selection to Enhance Long Video Understanding** (CVPR 2026 findings). A multimodal keyframe retrieval framework that fuses visual and subtitle information for long video understanding, achieving SOTA performance on LongVideoBench and VideoMME datasets.
+
+🌐 **Project page:** https://jacksonha7.github.io/VSI-page/ · 📄 **Paper:** https://arxiv.org/abs/2508.06869
 
 ## 1. Project Introduction
 ### 1.1 Core Motivation
