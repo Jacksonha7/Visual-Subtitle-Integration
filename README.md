@@ -6,7 +6,7 @@
 [![Project Page](https://img.shields.io/badge/Project-Page-blue.svg)](https://jacksonha7.github.io/VSI-page/)
 [![arXiv](https://img.shields.io/badge/arXiv-2508.06869-b31b1b.svg)](https://arxiv.org/abs/2508.06869)
 
-Official implementation of the paper **VSI: Visual–Subtitle Integration for Keyframe Selection to Enhance Long Video Understanding** (CVPR 2026 findings). A multimodal keyframe retrieval framework that fuses visual and subtitle information for long video understanding, achieving SOTA performance on LongVideoBench and VideoMME datasets.
+Official implementation of the paper **VSI: Visual–Subtitle Integration for Keyframe Selection to Enhance Long Video Understanding** (CVPR 2026 findings). A multimodal keyframe retrieval framework that fuses visual and subtitle information for long video understanding, achieving the best keyframe-search accuracy on LongVideoBench and improving downstream VideoQA on LongVideoBench and Video-MME.
 
 🌐 **Project page:** https://jacksonha7.github.io/VSI-page/ · 📄 **Paper:** https://arxiv.org/abs/2508.06869
 
@@ -17,8 +17,8 @@ Existing keyframe selection algorithms rely solely on visual modality, leading t
 ### 1.2 Key Advantages
 - **Multimodal Fusion**: Integrate visual object detection and subtitle semantic similarity for precise keyframe localization.
 - **Plug-and-Play**: No additional training required, lightweight and flexible, can be integrated into existing video-LM pipelines.
-- **SOTA Performance**: Achieves 73.89% average keyframe search accuracy (sampling only 3.2% video frames) on LongVideoBench; 40.00% keyframe search accuracy on text-related tasks (4-frame setting, up from 19.65% baseline).
-- **Strong Generalization**: Significantly improves downstream VideoQA performance (GPT-4o + VSI achieves 22.24% accuracy gain on Long-VideoQA tasks).
+- **Keyframe Search Accuracy**: 73.89% keyframe search accuracy on LongVideoBench (64 frames), ahead of T\* (67.58%) and VSLS (70.23%); on text-related tasks, search accuracy rises from 29.48% to 45.00% (8-frame setting).
+- **Strong Generalization**: Improves downstream VideoQA; on the text-related subsets of LongVideoBench, GPT-4o accuracy on long videos rises from 53.76% (uniform sampling) to 69.57% with VSI-selected frames.
 
 ### 1.3 Main Tasks
 - Keyframe retrieval for long video (3-60 minutes)
@@ -287,25 +287,28 @@ python KFSBench/scripts/evaluation/eval_metrics_lvbench.py \
 Baseline evaluation scripts are not yet released. Uniform sampling can be reproduced with `search_frames.py` (see 5.1 above). TSTAR and VSLS baselines are available in the TStar module (`TStar/TStarFramework.py`).
 
 ## 6. Main Experimental Results
-### 6.1 Keyframe Search Accuracy (LongVideoBench)
-| Method       | Top-k | Image-only | Text-only | Full Dataset |
-|--------------|-------|------------|-----------|--------------|
-| TSTAR        | 64    | <xxx>%     | <xxx>%    | <xxx>%       |
-| VSLS         | 64    | <xxx>%     | <xxx>%    | <xxx>%       |
-| **VSI (Ours)**| 64    | <xxx>%     | **77.17%** | **73.89%**  |
+All numbers below are from the [paper](https://arxiv.org/abs/2508.06869) (arXiv v4). The [project page](https://jacksonha7.github.io/VSI-page/) has the full tables.
 
-### 6.2 Text-related Task Performance (LongVideoBench, 4-frame)
-| Method       | Keyframe Acc | Medium VideoQA | Long VideoQA |
-|--------------|--------------|----------------|--------------|
-| GPT4o+TSTAR  | 19.65%       | 53.45%         | 53.76%       |
-| GPT4o+VSLS   | 18.50%       | 50.00%         | 52.69%       |
-| **GPT4o+VSI** | **40.00%**  | **63.79%**     | **68.48%**   |
+### 6.1 Keyframe Search Accuracy (LongVideoBench, 64 frames)
+| Method | TFLOPs | Latency (s) | Full | Image-only | Text-only |
+|--------|--------|-------------|------|------------|-----------|
+| T\*    | 31.7   | 28.96       | 67.58% | 70.34% | 66.36% |
+| VSLS   | 33.3   | 33.26       | 70.23% | 68.62% | 66.36% |
+| **VSI (Ours)** | 36.8 | 31.71 | **73.89%** | **71.56%** | **77.17%** |
 
-### 6.3 Downstream VideoQA Gain (GPT-4o, 32-frame)
-- LongVideoBench: **22.24%** accuracy gain compared to uniform sampling baseline
-- VideoMME: **<xxx>%** accuracy gain compared to uniform sampling baseline
+All three methods are training-free and use YOLO-World-110M for video search; VSI also encodes subtitles with all-mpnet-base-v2. Latency is on the full set.
 
-More detailed results can be found in our [paper](<paper.pdf>).
+### 6.2 Text-related Tasks (LongVideoBench text-related perception subsets, 8 frames)
+| Method | Keyframe Search Acc | GPT-4o Acc (Medium) | GPT-4o Acc (Long) |
+|--------|---------------------|---------------------|-------------------|
+| GPT-4o (uniform sampling) | – | 48.28% | 53.76% |
+| GPT-4o + subtitles in prompt | – | 46.55% | 58.06% |
+| GPT-4o + T\* | 29.48% | 48.28% | 58.06% |
+| GPT-4o + VSLS | 27.17% | 48.28% | 55.91% |
+| **GPT-4o + VSI (Ours)** | **45.00%** | **62.07%** | **69.57%** |
+
+### 6.3 Downstream VideoQA
+Evaluated with GPT-4o, LLaVA-Video-7B-Qwen2 and Qwen2.5-VL-7B-Instruct at 8 and 32 frames, on medium and long videos. Compared with uniform sampling, VSI improves or ties in all 12 LongVideoBench settings and improves in 11 of the 12 Video-MME settings. For example, with GPT-4o and 32 frames on LongVideoBench, accuracy goes from 48.2% to 51.2% on long videos and from 51.9% to 53.9% on medium videos.
 
 ## 7. Project Structure
 ```
